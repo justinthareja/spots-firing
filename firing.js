@@ -1,38 +1,44 @@
 var MSW_API_KEY = "jx5HFZ5OyPH6zqKR9Pb8k230iSGymW2Q";
 var MSW_API_SECRET = "48Kx1256b8VpNBHLKh5pA3Q77BN2asqy";
-var mswSpot = '644';
 
-// query random spot from spotNumber who's value is still false
-// filter the query to only the timestamp closest to now
+function getSpot () {
+  var spots = Object.keys(spotNumber);
+  var randomIndex = Math.floor(Math.random () * spots.length);
 
-$.ajax({
- 
+  while (spotNumber[spots[randomIndex]]) {
+    randomIndex = Math.floor(Math.random () * spots.length);
+  }
+  spotNumber[spots[randomIndex]] = true;
+  console.log('calling MSW for spot number', spots[randomIndex]);
+  return spots[randomIndex];
+}
+
+function callMSW () {
+  $.ajax({
+   
     url: 'http://magicseaweed.com/api/' + MSW_API_KEY + '/forecast/',
     data: {
-        spot_id: mswSpot,
-        // fields: 'timestamp, solidRating, fadedRating, localTimestamp'
+      spot_id: getSpot(),
+      fields: 'timestamp, solidRating'
     },
     type: "GET",
     dataType : "jsonp",
 
     success: function( response ) {
-        currentSwell(response, function (currentForecast) {
-          console.log(currentForecast);
-        })
+      getCurrentSwell(response, checkSwellRating);
     },
  
     error: function( xhr, status, errorThrown ) {
-        console.log( "Sorry, there was a problem!" );
+      console.log( "Sorry, there was a problem!" );
     },
  
     complete: function( xhr, status ) {
-        console.log("The request completed is complete!");
+      console.log("The request completed is complete!");
     }
-});
+  });
+}
 
-
-
-function currentSwell (array, callback) {
+function getCurrentSwell (array, callback) {
     
   var now = Date.now() / 1000;
   var today = array.slice(0, 8); 
@@ -49,13 +55,16 @@ function checkSwellRating (forecast) {
 
   if (forecast.solidRating === 5) {
     console.log('Found a spot thats FIRING', forecast);
+    // call for all the data
   }
   else {
-    // re-call magicseaweed 
+    console.log('Forecast was less than five stars', forecast.solidRating);
+    callMSW();
   }
 
-
 }
+
+callMSW();
 
 // declare a var "swellNow" 
 // iterate over the json response
